@@ -1,0 +1,67 @@
+# Onloc [Community]
+
+## 1. Create a New Resource
+
+In your Coolify project, click **+ New Resource** and select **"Docker Compose Empty"**.
+
+---
+
+## 2. Paste the Compose File
+
+Open **"Edit Compose File"** and paste the contents of the [docker-compose.yml file](https://github.com/onloc-app/onloc-deployment/blob/main/docker-compose.yml) from the deployment repository.
+
+---
+
+## 3. Set Environment Variables
+
+In the **Environment Variables** section, set:
+
+| Variable | Value |
+|----------|-------|
+| `POSTGRES_DB` | `onloc` (or custom) |
+| `POSTGRES_DB_USER` | `onloc` (or custom) |
+| `POSTGRES_DB_PASSWORD` | **choose a strong password** |
+
+---
+
+## 4. Assign the Domain
+
+Assign your domain to the **`caddy`** service only, with port `80`:
+
+```
+https://onloc.yourdomain.com:80
+```
+
+Do not assign a domain to `api`, `ui`, or `db`.
+
+---
+
+## 5. Deploy
+
+Click **Deploy** and wait for all four services to turn green in Coolify.
+
+---
+
+## 6. Restart the Proxy
+
+Go to **Servers → your server → Proxy** and restart the proxy. This is required so Coolify generates the SSL certificate for your domain.
+
+Once the proxy is back up, wait a moment for the SSL certificate to be issued and become valid — this can take up to several minutes. Then open your domain in the browser — onloc should be up and running.
+
+---
+
+## Troubleshooting
+
+If one or more services stay red, check the service logs in Coolify for details and refer to the hints below.
+
+**`db` is not healthy**
+Make sure `POSTGRES_DB_USER` and `POSTGRES_DB_PASSWORD` are set correctly. The health check uses these variables internally — a mismatch will cause `pg_isready` to fail.
+
+**`api` is not healthy**
+The API depends on `db` being healthy first. If `db` is green but `api` stays red, check that the `DATABASE_URL` environment variable is correct and that all three Postgres variables (`POSTGRES_DB`, `POSTGRES_DB_USER`, `POSTGRES_DB_PASSWORD`) are consistent between the `api` and `db` services.
+
+**`caddy` is not healthy**
+Caddy only starts after both `api` and `ui` are healthy. If either of those is still red, fix them first — Caddy will follow automatically.
+
+**Site not reachable in the browser**
+Verify that the domain is assigned to the `caddy` service (not `api` or `ui`) and that the port is set to `80`. Coolify handles HTTPS in front of Caddy, so Caddy itself only needs to listen on port 80.
